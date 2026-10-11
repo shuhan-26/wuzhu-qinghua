@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#b52237">
+  <title>无主情话</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --red: #b52237;
+      --scene-color: #b52237;
+      --orange: #e95c31;
+      --gold: #f0b84b;
+      --cream: #f7e9d4;
+      --teal: #153e3d;
+      --muted: rgba(247, 233, 212, .72);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      min-width: 320px;
+      min-height: 100svh;
+      margin: 0;
+      color: var(--cream);
+      background: var(--scene-color);
+      transition: background-color .7s ease;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background: var(--scene-color);
+      transition: background-color .7s ease;
+      content: "";
+    }
+
+    body::after {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.27'/%3E%3C/svg%3E");
+      content: "";
+      opacity: .13;
+      pointer-events: none;
+    }
+
+    button { font: inherit; }
+    .frame {
+      position: relative;
+      display: flex;
+      min-height: 100svh;
+      flex-direction: column;
+      padding: 25px 36px 22px;
+      isolation: isolate;
+    }
+
+    .frame::before, .frame::after {
+      position: absolute;
+      z-index: -1;
+      content: "";
+      pointer-events: none;
+    }
+    .frame::before { top: 0; left: 7.2%; width: 1px; height: 100%; background: rgba(247, 233, 212, .22); }
+    .frame::after { right: 0; bottom: 16%; width: 17%; height: 1px; background: rgba(240, 184, 75, .6); }
+
+    header, footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .masthead { font-family: "Songti SC", "STSong", "Noto Serif CJK SC", Georgia, serif; font-size: 14px; letter-spacing: .18em; }
+    .masthead span { color: var(--gold); }
+    .edition { color: var(--muted); font-size: 10px; letter-spacing: .16em; }
+
+    main {
+      position: relative;
+      display: grid;
+      flex: 1;
+      align-content: center;
+      justify-items: center;
+      padding: 36px 240px 58px;
+      text-align: center;
+    }
+
+    .chapter { margin: 0 0 22px; color: var(--gold); font-size: 10px; letter-spacing: .28em; }
+    .intro { margin: 17px 0 0; color: rgba(255, 238, 220, .84); font-size: 13px; letter-spacing: .12em; }
+    .rule { width: 36px; height: 1px; margin: 33px auto 25px; background: var(--gold); }
+
+    .quote-area { position: relative; width: min(1120px, 100%); min-height: 230px; display: grid; align-content: center; justify-items: center; }
+    .particle-canvas { position: absolute; inset: 0; z-index: 1; display: block; width: 100%; height: 100%; pointer-events: none; }
+    .particle-canvas[hidden] { display: none; }
+    .particle-canvas.is-fading { opacity: 0; transition: opacity .5s ease; }
+    .quote {
+      position: relative;
+      z-index: 2;
+      margin: 0;
+      max-width: 1000px;
+      font-family: "Songti SC", "STSong", "Noto Serif CJK SC", Georgia, serif;
+      font-size: 60px;
+      font-weight: 400;
+      line-height: 1.65;
+      letter-spacing: .08em;
+      text-wrap: balance;
+      overflow-wrap: anywhere;
+    }
+    .quote.is-forming { opacity: 0; }
+    .quote.is-visible { animation: subtitle-in .55s ease-out both; }
+    .source { margin-top: 15px; color: rgba(247, 233, 212, .78); font-size: 12px; letter-spacing: .08em; }
+    .source.is-visible { animation: source-in .65s .16s both; }
+    .source[hidden] { display: none; }
+
+    @keyframes subtitle-in {
+      0% { opacity: 0; filter: blur(2px); transform: translateY(5px); }
+      100% { opacity: 1; filter: blur(0); transform: translateY(0); }
+    }
+    @keyframes source-in {
+      0% { opacity: 0; transform: translateY(4px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .controls { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-top: 28px; }
+    .next-button {
+      min-width: 156px;
+      min-height: 44px;
+      padding: 0 17px;
+      border: 1px solid rgba(247, 233, 212, .68);
+      border-radius: 0;
+      color: var(--cream);
+      background: transparent;
+      font-size: 12px;
+      letter-spacing: .12em;
+      cursor: pointer;
+      transition: color .25s ease, background .25s ease;
+    }
+    .next-button:hover { color: var(--red); background: var(--cream); }
+    .next-button:focus-visible, .camera__retry:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
+    .hint { color: rgba(247, 233, 212, .69); font-size: 11px; }
+
+    .camera {
+      position: absolute;
+      right: 5.5%;
+      bottom: 8%;
+      width: 146px;
+    }
+    .camera__label { display: flex; justify-content: space-between; margin-bottom: 7px; color: var(--cream); font-size: 9px; letter-spacing: .12em; }
+    .camera__label span:last-child { color: var(--gold); }
+    .camera__view {
+      position: relative;
+      aspect-ratio: 4 / 5;
+      overflow: hidden;
+      border: 1px solid rgba(247, 233, 212, .56);
+      background: var(--teal);
+    }
+    video { display: block; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+    .camera__placeholder { position: absolute; inset: 0; display: grid; place-items: center; padding: 15px; color: rgba(247, 233, 212, .77); font-family: "Songti SC", "STSong", Georgia, serif; font-size: 12px; line-height: 1.8; text-align: center; }
+    .camera__placeholder[hidden] { display: none; }
+    .camera__status { min-height: 32px; display: flex; align-items: center; gap: 7px; color: rgba(247, 233, 212, .78); font-size: 9px; line-height: 1.5; }
+    .camera__dot { width: 6px; height: 6px; flex: 0 0 auto; border-radius: 50%; background: var(--gold); }
+    .camera__dot[data-active="true"] { background: #b8de9b; box-shadow: 0 0 9px #b8de9b; }
+    .camera__retry { padding: 0; border: 0; color: var(--cream); background: none; font-size: 10px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+    footer { color: rgba(247, 233, 212, .69); font-size: 9px; letter-spacing: .1em; }
+    @media (min-width: 761px) and (max-width: 1200px) {
+      main { padding: 44px 150px 66px 120px; }
+      .quote { font-size: 46px; }
+      .camera { right: 3%; width: 105px; }
+    }
+    @media (max-width: 760px) {
+      .frame { min-height: 100svh; padding: 20px 21px 17px; }
+      .frame::before { left: 12px; }
+      .frame::after { bottom: 25%; width: 12%; }
+      main { padding: 30px 8px 210px; }
+      .quote-area { min-height: 220px; }
+      .quote { font-size: 32px; line-height: 1.7; letter-spacing: .06em; }
+      .camera { right: 22px; bottom: 24px; width: 86px; }
+      .camera__status { min-height: 28px; }
+      footer { font-size: 8px; letter-spacing: .04em; }
+    }
+    @media (max-width: 390px) {
+      .edition { font-size: 8px; }
+      main { padding-right: 0; padding-left: 0; }
+      .quote { font-size: 29px; }
+      footer span:last-child { max-width: 46%; text-align: right; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <header>
+      <div class="masthead"><span>VOL.</span> 01 &nbsp; 无主情话</div>
+      <div class="edition" id="collection-count">一段未寄出的心事</div>
+    </header>
+
+    <main>
+      <p class="chapter">A LOVE LETTER WITHOUT AN ADDRESS</p>
+      <p class="intro">如果此刻刚好被看见，就把这句话当作写给你的。</p>
+      <div class="rule" aria-hidden="true"></div>
+      <section class="quote-area" aria-live="polite" aria-atomic="true">
+        <canvas class="particle-canvas" id="particle-canvas" aria-hidden="true" hidden></canvas>
+        <p class="quote" id="quote-text">等一张脸，来领走一句心事。</p>
+        <div class="source" id="quote-source" hidden></div>
+      </section>
+      <div class="controls">
+        <button class="next-button" id="next-button" type="button">再遇见一句　↗</button>
+      </div>
+
+      <aside class="camera" aria-label="人脸检测状态">
+        <div class="camera__label"><span>此刻的你</span><span>FACE / 01</span></div>
+        <div class="camera__view">
+          <video id="camera-video" autoplay muted playsinline aria-label="摄像头实时画面"></video>
+          <div class="camera__placeholder" id="camera-placeholder">等光线落下，<br>就会看见你。</div>
+        </div>
+        <div class="camera__status" role="status" aria-live="polite">
+          <span class="camera__dot" id="camera-dot" aria-hidden="true"></span>
+          <span id="camera-status">正在请求摄像头权限…</span>
+        </div>
+        <div id="camera-action"></div>
+      </aside>
+    </main>
+
+    <footer><span>从你的文档中，挑选一封未寄出的信。</span><span>表情判断仅供互动参考，画面只在本机处理。</span></footer>
+  </div>
+
+  <script>
+    const loveNotes = [
+      { id: "note-001", text: "我行过许多地方的桥，看过许多次数的云，喝过许多种类的酒，却只爱过一个正当最好年龄的人。", source: "沈从文", category: "现代文学", style: "深情" },
+      { id: "note-002", text: "我们相爱一生，一生还是太短。", source: "沈从文", category: "现代文学", style: "深情" },
+      { id: "note-003", text: "我明白你会来，所以我等。", source: "沈从文", category: "现代文学", style: "含蓄" },
+      { id: "note-004", text: "一想到你，我这张丑脸上就泛起微笑。", source: "王小波", category: "现代文学", style: "轻甜" },
+      { id: "note-005", text: "你要是愿意，我就永远爱你；你要是不愿意，我就永远相思。", source: "王小波", category: "现代文学", style: "深情" },
+      { id: "note-006", text: "爱你就像爱生命。", source: "王小波", category: "现代文学", style: "深情" },
+      { id: "note-007", text: "不管我本人多么平庸，我总觉得对你的爱很美。", source: "王小波", category: "现代文学", style: "温柔" },
+      { id: "note-008", text: "你是爱，是暖，是希望，你是人间四月天。", source: "林徽因", category: "现代文学", style: "温柔" },
+      { id: "note-009", text: "你是一树一树的花开，是燕在梁间呢喃。", source: "林徽因", category: "现代文学", style: "文艺" },
+      { id: "note-010", text: "去见你的路上，阳光温热，云朵可爱，想必晚风吹来，也是甜的。", source: "冰心", category: "现代文学", style: "轻甜" },
+      { id: "note-011", text: "你走，我送你；你来，无论多大的风雨，我都要去接你。", source: "梁实秋", category: "现代文学", style: "温柔" },
+      { id: "note-012", text: "我将于茫茫人海中，访我唯一灵魂之伴侣；得之，我幸；不得，我命。", source: "徐志摩", category: "现代文学", style: "古典" },
+      { id: "note-013", text: "一生至少该有一次，为了某个人而忘了自己。", source: "徐志摩", category: "现代文学", style: "深情" },
+      { id: "note-014", text: "草在结它的种子，风在摇它的叶子。我们站着，不说话，就十分美好。", source: "顾城", category: "现代文学", style: "文艺" },
+      { id: "note-015", text: "你站在桥上看风景，看风景人在楼上看你。", source: "卞之琳《断章》", category: "现代文学", style: "含蓄" },
+      { id: "note-016", text: "月色与雪色之间，你是第三种颜色。", source: "余光中", category: "现代文学", style: "文艺" },
+      { id: "note-017", text: "我曾踏月而来，只因你在山中。", source: "席慕蓉", category: "现代文学", style: "古典" },
+      { id: "note-018", text: "我必须是你近旁的一株木棉，作为树的形象和你站在一起。", source: "舒婷《致橡树》", category: "现代文学", style: "深情" },
+      { id: "note-019", text: "于千万人之中遇见你所遇见的人，没有早一步，也没有晚一步，刚巧赶上了。", source: "张爱玲", category: "现代文学", style: "文艺" },
+      { id: "note-020", text: "醒来觉得甚是爱你。", source: "朱生豪", category: "现代文学", style: "轻甜" },
+      { id: "note-021", text: "我爱你，以我童年的信仰，以我一生中所有激动人心的时刻。", source: "陀思妥耶夫斯基《白夜》", category: "外国文学", style: "深情" },
+      { id: "note-022", text: "我爱你，不光因为你的样子，还因为和你在一起时，我的样子。", source: "罗伊·克里夫特《爱》", category: "外国文学", style: "温柔" },
+      { id: "note-023", text: "爱是想要触碰却又收回手。", source: "塞林格《破碎故事之心》", category: "外国文学", style: "含蓄" },
+      { id: "note-024", text: "我的心是旷野的鸟，在你的眼睛里找到了它的天空。", source: "泰戈尔《飞鸟集》", category: "外国文学", style: "文艺" },
+      { id: "note-025", text: "爱是理解的别名。", source: "泰戈尔", category: "外国文学", style: "古典" },
+      { id: "note-026", text: "爱不是彼此凝视，而是一起眺望同一个方向。", source: "圣埃克苏佩里", category: "外国文学", style: "温柔" },
+      { id: "note-027", text: "正是你为你的玫瑰花费的时光，才使你的玫瑰变得如此重要。", source: "圣埃克苏佩里《小王子》", category: "外国文学", style: "温柔" },
+      { id: "note-028", text: "如果你在下午四点钟来，那么我在三点钟就会开始感到幸福。", source: "圣埃克苏佩里《小王子》", category: "外国文学", style: "轻甜" },
+      { id: "note-029", text: "我的灵魂跟你的一样，我的心也跟你的完全一样。", source: "夏洛蒂·勃朗特《简·爱》", category: "外国文学", style: "深情" },
+      { id: "note-030", text: "我就是希斯克利夫！他永远、永远在我心里。", source: "艾米莉·勃朗特《呼啸山庄》", category: "外国文学", style: "深情" },
+      { id: "note-031", text: "不论我们的灵魂是什么做成的，他的和我的，一模一样。", source: "艾米莉·勃朗特《呼啸山庄》", category: "外国文学", style: "深情" },
+      { id: "note-032", text: "爱不会随岁月变迁而改变，它坚守到世界末日。", source: "莎士比亚《十四行诗》", category: "外国文学", style: "古典" },
+      { id: "note-033", text: "你可怀疑星辰如火，但绝不要怀疑我爱你。", source: "莎士比亚", category: "外国文学", style: "深情" },
+      { id: "note-034", text: "比起你年轻时的美貌，我更爱你现在饱经风霜的容颜。", source: "杜拉斯《情人》", category: "外国文学", style: "深情" },
+      { id: "note-035", text: "我遇见你，我记得你，你天生就适合我的灵魂。", source: "杜拉斯《广岛之恋》", category: "外国文学", style: "文艺" },
+      { id: "note-036", text: "我对你的爱与日俱增，今天比昨天多，明天比今天多。", source: "马尔克斯《霍乱时期的爱情》", category: "外国文学", style: "深情" },
+      { id: "note-037", text: "我爱你，与你无关，它只属于我的心。", source: "歌德", category: "外国文学", style: "含蓄" },
+      { id: "note-038", text: "灵魂与灵魂的相遇，是生命中罕见的馈赠。", source: "黑塞《悉达多》", category: "外国文学", style: "文艺" },
+      { id: "note-039", text: "在我贫瘠的土地上，你是最后的玫瑰。", source: "聂鲁达", category: "外国文学", style: "古典" },
+      { id: "note-040", text: "我曾经默默无语、毫无指望地爱过你。", source: "普希金", category: "外国文学", style: "含蓄" },
+      { id: "note-041", text: "死生契阔，与子成说。执子之手，与子偕老。", source: "《诗经·邶风·击鼓》", category: "古诗词", style: "古典" },
+      { id: "note-042", text: "青青子衿，悠悠我心。", source: "《诗经·郑风·子衿》", category: "古诗词", style: "含蓄" },
+      { id: "note-043", text: "今夕何夕，见此良人。", source: "《诗经·唐风·绸缪》", category: "古诗词", style: "古典" },
+      { id: "note-044", text: "风雨如晦，鸡鸣不已。既见君子，云胡不喜。", source: "《诗经·郑风·风雨》", category: "古诗词", style: "古典" },
+      { id: "note-045", text: "投我以木桃，报之以琼瑶。匪报也，永以为好也。", source: "《诗经·卫风·木瓜》", category: "古诗词", style: "古典" },
+      { id: "note-046", text: "山有木兮木有枝，心悦君兮君不知。", source: "《越人歌》", category: "古诗词", style: "古风" },
+      { id: "note-047", text: "愿为西南风，长逝入君怀。", source: "曹植《七哀诗》", category: "古诗词", style: "古风" },
+      { id: "note-048", text: "结发为夫妻，恩爱两不疑。", source: "苏武《留别妻》", category: "古诗词", style: "古典" },
+      { id: "note-049", text: "愿得一心人，白头不相离。", source: "卓文君《白头吟》", category: "古诗词", style: "古典" },
+      { id: "note-050", text: "入我相思门，知我相思苦。", source: "李白《秋风词》", category: "古诗词", style: "古风" },
+      { id: "note-051", text: "红豆生南国，春来发几枝。愿君多采撷，此物最相思。", source: "王维《相思》", category: "古诗词", style: "古典" },
+      { id: "note-052", text: "在天愿作比翼鸟，在地愿为连理枝。", source: "白居易《长恨歌》", category: "古诗词", style: "古典" },
+      { id: "note-053", text: "曾经沧海难为水，除却巫山不是云。", source: "元稹《离思五首·其四》", category: "古诗词", style: "深情" },
+      { id: "note-054", text: "身无彩凤双飞翼，心有灵犀一点通。", source: "李商隐《无题》", category: "古诗词", style: "含蓄" },
+      { id: "note-055", text: "何当共剪西窗烛，却话巴山夜雨时。", source: "李商隐《夜雨寄北》", category: "古诗词", style: "温柔" },
+      { id: "note-056", text: "两情若是久长时，又岂在朝朝暮暮。", source: "秦观《鹊桥仙》", category: "古诗词", style: "深情" },
+      { id: "note-057", text: "此情无计可消除，才下眉头，却上心头。", source: "李清照《一剪梅》", category: "古诗词", style: "含蓄" },
+      { id: "note-058", text: "天涯地角有穷时，只有相思无尽处。", source: "晏殊《玉楼春》", category: "古诗词", style: "古典" },
+      { id: "note-059", text: "只愿君心似我心，定不负相思意。", source: "李之仪《卜算子》", category: "古诗词", style: "深情" },
+      { id: "note-060", text: "人生若只如初见，何事秋风悲画扇。", source: "纳兰性德《木兰花》", category: "古诗词", style: "含蓄" },
+      { id: "note-061", text: "如果有多一张船票，你会不会跟我一起走？", source: "《花样年华》", category: "影视台词", style: "含蓄" },
+      { id: "note-062", text: "爱情这东西，时间很关键。认识得太早或太晚，都不行。", source: "《2046》", category: "影视台词", style: "文艺" },
+      { id: "note-063", text: "黎耀辉，不如我们重新开始。", source: "《春光乍泄》", category: "影视台词", style: "深情" },
+      { id: "note-064", text: "一切都停止了，这夜晚停止了，那月亮停止了。", source: "《暗恋桃花源》", category: "影视台词", style: "文艺" },
+      { id: "note-065", text: "之凡，这些年，你有没有想过我？", source: "《暗恋桃花源》", category: "影视台词", style: "含蓄" },
+      { id: "note-066", text: "差一年、一个月、一天、一个时辰，都不算一辈子。", source: "《霸王别姬》", category: "影视台词", style: "深情" },
+      { id: "note-067", text: "任凭弱水三千，我只取一瓢饮。", source: "《红楼梦》", category: "影视台词", style: "古典" },
+      { id: "note-068", text: "我想就这样牵着你的手不放开，爱可不可以简简单单没有伤害。", source: "《简单爱》", category: "现代流行", style: "轻甜" },
+      { id: "note-069", text: "我能想到最浪漫的事，就是和你一起慢慢变老。", source: "《最浪漫的事》", category: "现代流行", style: "温柔" },
+      { id: "note-070", text: "陪伴，是我给你最长情的告白。", source: "《陪你度过漫长岁月》", category: "现代流行", style: "温柔" },
+      { id: "note-071", text: "我遇见你是最美丽的意外。", source: "《遇见》", category: "现代流行", style: "轻甜" },
+      { id: "note-072", text: "我说所有的酒，都不如你。", source: "《春风十里》", category: "现代流行", style: "文艺" },
+      { id: "note-073", text: "然后呢，一起走吧。", source: "五月天", category: "现代流行", style: "轻甜" },
+      { id: "note-074", text: "全世界哪里最美？答案是你身边。", source: "五月天", category: "现代流行", style: "甜" },
+      { id: "note-075", text: "春风再美也比不上你的笑。", source: "《鬼迷心窍》", category: "现代流行", style: "温柔" },
+      { id: "note-076", text: "在有生的瞬间能遇到你，竟花光所有运气。", source: "《明年今日》", category: "现代流行", style: "深情" },
+      { id: "note-077", text: "终于等到你，差点要错过你。", source: "《终于等到你》", category: "现代流行", style: "甜" },
+      { id: "note-078", text: "爱是天时地利的迷信，原来你也在这里。", source: "《原来你也在这里》", category: "现代流行", style: "文艺" },
+      { id: "note-079", text: "我愿变成童话里，你爱的那个天使。", source: "《童话》", category: "现代流行", style: "甜" },
+      { id: "note-080", text: "因为爱情，不会轻易悲伤，所以一切都是幸福的模样。", source: "《因为爱情》", category: "现代流行", style: "温柔" },
+      { id: "note-081", text: "有的人说不清哪里好，但就是谁都替代不了。", source: "《遗失的美好》", category: "现代流行", style: "深情" },
+      { id: "note-082", text: "我不再让你孤单，一起走到地老天荒。", source: "《不再让你孤单》", category: "现代流行", style: "深情" },
+      { id: "note-083", text: "我怀念的是无话不说，我怀念的是一起做梦。", source: "《我怀念的》", category: "现代流行", style: "含蓄" },
+      { id: "note-084", text: "你是空气，但是好闻胜过了空气。", source: "五月天", category: "现代流行", style: "轻甜" },
+      { id: "note-085", text: "就算全世界对你恶语相加，我只对你说上一世情话。", source: "《傲寒》", category: "现代流行", style: "深情" },
+      { id: "note-086", text: "小酒窝长睫毛，是你最美的记号。", source: "《小酒窝》", category: "现代流行", style: "轻甜" },
+      { id: "note-087", text: "你跳，我也跳。", source: "《泰坦尼克号》", category: "影视台词", style: "深情" },
+      { id: "note-088", text: "我永不放手。", source: "《泰坦尼克号》", category: "影视台词", style: "深情" },
+      { id: "note-089", text: "你让我的人生完整。", source: "《甜心先生》", category: "影视台词", style: "温柔" },
+      { id: "note-090", text: "因为你，我才懂得了爱。", source: "《怦然心动》", category: "影视台词", style: "温柔" },
+      { id: "note-091", text: "看着我的眼睛，你会发现你对我意味着什么。", source: "《天使之城》", category: "影视台词", style: "深情" },
+      { id: "note-092", text: "我只是想和你在一起，仅此而已。", source: "《爱你，罗茜》", category: "影视台词", style: "含蓄" },
+      { id: "note-093", text: "我们永远拥有巴黎。", source: "《卡萨布兰卡》", category: "影视台词", style: "文艺" },
+      { id: "note-094", text: "我爱你，从过去到现在，直到未来。", source: "《时空恋旅人》", category: "影视台词", style: "深情" },
+      { id: "note-095", text: "你出现的那一刻，就是我故事的开始。", source: "《时空恋旅人》", category: "影视台词", style: "甜" },
+      { id: "note-096", text: "你是我唯一想带回家的人。", source: "《请以你的名字呼唤我》", category: "影视台词", style: "温柔" },
+      { id: "note-097", text: "我在最好的时候碰到你，是我的运气。", source: "《爱在黎明破晓前》", category: "影视台词", style: "含蓄" },
+      { id: "note-098", text: "世间最美的事，莫过于去爱时，同时也被爱着。", source: "《红磨坊》", category: "影视台词", style: "古典" },
+      { id: "note-099", text: "世界上有那么多的城镇，城镇中有那么多的酒馆，她却走进了我的。", source: "《卡萨布兰卡》", category: "影视台词", style: "文艺" },
+      { id: "note-100", text: "你是我生命中最美好的意外。", source: "《和莎莫的500天》", category: "影视台词", style: "轻甜" }
+    ];
+
+    const quoteArea = document.querySelector(".quote-area");
+    const quoteText = document.querySelector("#quote-text");
+    const quoteSource = document.querySelector("#quote-source");
+    const particleCanvas = document.querySelector("#particle-canvas");
+    const scenePalettes = [
+      { color: "#b52237", shade: "#153e3d" },
+      { color: "#007c55", shade: "#123b32" },
+      { color: "#1b56b8", shade: "#102e5a" },
+      { color: "#007e88", shade: "#103f43" },
+      { color: "#ba451e", shade: "#4a2319" }
+    ];
+    const expressionProfiles = {
+      happy: { label: "微笑", styles: ["甜", "轻甜"] },
+      sad: { label: "低落表情", styles: ["温柔", "深情"] },
+      angry: { label: "皱眉", styles: ["温柔", "含蓄"] },
+      fearful: { label: "紧张表情", styles: ["温柔", "含蓄"] },
+      disgusted: { label: "俏皮表情", styles: ["轻甜", "甜"] },
+      surprised: { label: "惊讶", styles: ["文艺", "轻甜"] }
+    };
+    const video = document.querySelector("#camera-video");
+    const statusText = document.querySelector("#camera-status");
+    const cameraDot = document.querySelector("#camera-dot");
+    const cameraPlaceholder = document.querySelector("#camera-placeholder");
+    const cameraAction = document.querySelector("#camera-action");
+    let hasPhrase = false;
+    let activeStream;
+    let particleFrame = 0;
+    let particleCleanupTimer = 0;
+    let previousSceneIndex = 0;
+    let expressionCandidate = "";
+    let expressionCandidateFrames = 0;
+    let neutralFrameCount = 0;
+    let lastTriggeredExpression = "";
+    let lastExpressionTriggerAt = 0;
+
+    document.querySelector("#collection-count").textContent = `FROM YOUR LETTERS / ${loveNotes.length} NOTES`;
+
+    function clearParticleReveal() {
+      if (particleFrame) window.cancelAnimationFrame(particleFrame);
+      if (particleCleanupTimer) window.clearTimeout(particleCleanupTimer);
+      particleFrame = 0;
+      particleCleanupTimer = 0;
+      particleCanvas.classList.remove("is-fading");
+      particleCanvas.hidden = true;
+      const context = particleCanvas.getContext("2d");
+      if (context) context.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+    }
+
+    function revealSource() {
+      quoteSource.hidden = false;
+      quoteSource.classList.remove("is-visible");
+      void quoteSource.offsetWidth;
+      quoteSource.classList.add("is-visible");
+    }
+
+    function changeSceneColor() {
+      let index = Math.floor(Math.random() * scenePalettes.length);
+      while (index === previousSceneIndex) index = Math.floor(Math.random() * scenePalettes.length);
+      previousSceneIndex = index;
+      const palette = scenePalettes[index];
+      const root = document.documentElement;
+      root.style.setProperty("--scene-color", palette.color);
+      root.style.setProperty("--red", palette.color);
+      root.style.setProperty("--teal", palette.shade);
+      document.querySelector('meta[name="theme-color"]').content = palette.color;
+    }
+
+    function animateQuoteParticles() {
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+      const context = particleCanvas.getContext("2d");
+      const sampleCanvas = document.createElement("canvas");
+      const sampleContext = sampleCanvas.getContext("2d", { willReadFrequently: true });
+      const areaRect = quoteArea.getBoundingClientRect();
+      const textNode = quoteText.firstChild;
+      if (!context || !sampleContext || !textNode || !areaRect.width || !areaRect.height) return false;
+
+      try {
+        const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+        const width = Math.round(areaRect.width * pixelRatio);
+        const height = Math.round(areaRect.height * pixelRatio);
+        sampleCanvas.width = width;
+        sampleCanvas.height = height;
+        particleCanvas.width = width;
+        particleCanvas.height = height;
+        particleCanvas.hidden = false;
+        particleCanvas.classList.remove("is-fading");
+        sampleContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+        sampleContext.font = getComputedStyle(quoteText).font;
+        sampleContext.textBaseline = "middle";
+        sampleContext.fillStyle = "#fff8ed";
+
+        const range = document.createRange();
+        let textOffset = 0;
+        for (const character of Array.from(quoteText.textContent)) {
+          range.setStart(textNode, textOffset);
+          range.setEnd(textNode, textOffset + character.length);
+          textOffset += character.length;
+          if (/\s/.test(character)) continue;
+          const rect = range.getBoundingClientRect();
+          sampleContext.fillText(character, rect.left - areaRect.left, rect.top - areaRect.top + rect.height / 2);
+        }
+
+        const image = sampleContext.getImageData(0, 0, width, height).data;
+        const targets = [];
+        const sampleStep = Math.max(4, Math.round(pixelRatio * 3));
+        for (let y = 0; y < height; y += sampleStep) {
+          for (let x = 0; x < width; x += sampleStep) {
+            if (image[(y * width + x) * 4 + 3] > 100) {
+              targets.push({ x: x / pixelRatio, y: y / pixelRatio });
+            }
+          }
+        }
+        if (!targets.length) {
+          particleCanvas.hidden = true;
+          return false;
+        }
+
+        const particles = targets.map((target) => ({
+          ...target,
+          startX: Math.random() * areaRect.width,
+          startY: Math.random() * areaRect.height,
+          radius: .65 + Math.random() * .55,
+          phase: Math.random() * Math.PI * 2
+        }));
+        context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+        context.clearRect(0, 0, areaRect.width, areaRect.height);
+        quoteText.classList.add("is-forming");
+
+        const startTime = performance.now();
+        const duration = 1750;
+        function drawParticles(time) {
+          const progress = Math.min((time - startTime) / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          const drift = (1 - progress) * 8;
+          context.clearRect(0, 0, areaRect.width, areaRect.height);
+          context.fillStyle = "#fff8ed";
+          context.globalAlpha = .65 + progress * .35;
+          for (const particle of particles) {
+            const x = particle.startX + (particle.x - particle.startX) * eased + Math.sin(time * .004 + particle.phase) * drift;
+            const y = particle.startY + (particle.y - particle.startY) * eased + Math.cos(time * .004 + particle.phase) * drift;
+            context.beginPath();
+            context.arc(x, y, particle.radius, 0, Math.PI * 2);
+            context.fill();
+          }
+          context.globalAlpha = 1;
+
+          if (progress < 1) {
+            particleFrame = window.requestAnimationFrame(drawParticles);
+            return;
+          }
+
+          particleFrame = 0;
+          quoteText.classList.remove("is-forming");
+          quoteText.classList.add("is-visible");
+          particleCanvas.classList.add("is-fading");
+          revealSource();
+          particleCleanupTimer = window.setTimeout(clearParticleReveal, 520);
+        }
+
+        particleFrame = window.requestAnimationFrame(drawParticles);
+        return true;
+      } catch {
+        particleCanvas.hidden = true;
+        quoteText.classList.remove("is-forming");
+        return false;
+      }
+    }
+
+    function showNextNote(preferredStyles = null) {
+      clearParticleReveal();
+      const previousId = quoteText.dataset.noteId;
+      const candidates = preferredStyles ? loveNotes.filter((note) => preferredStyles.includes(note.style)) : loveNotes;
+      const notes = candidates.length ? candidates : loveNotes;
+      let note = notes[Math.floor(Math.random() * notes.length)];
+      if (notes.length > 1) {
+        while (note.id === previousId) note = notes[Math.floor(Math.random() * notes.length)];
+      }
+      changeSceneColor();
+      quoteText.classList.remove("is-visible", "is-forming");
+      void quoteText.offsetWidth;
+      quoteText.textContent = note.text;
+      quoteText.dataset.noteId = note.id;
+      quoteSource.textContent = `—— ${note.source}`;
+      quoteSource.hidden = true;
+      quoteSource.classList.remove("is-visible");
+      if (!animateQuoteParticles()) {
+        quoteText.classList.add("is-visible");
+        revealSource();
+      }
+      hasPhrase = true;
+    }
+
+    function setCameraStatus(message, active = false) {
+      statusText.textContent = message;
+      cameraDot.dataset.active = String(active);
+    }
+
+    function enterManualMode(message) {
+      if (activeStream) activeStream.getTracks().forEach((track) => track.stop());
+      activeStream = null;
+      video.srcObject = null;
+      cameraPlaceholder.hidden = false;
+      cameraPlaceholder.innerHTML = "镜头未开启，<br>仍可继续抽取。";
+      setCameraStatus(message);
+      cameraAction.replaceChildren();
+    }
+
+    function loadFaceApi() {
+      if (window.faceapi) return Promise.resolve(window.faceapi);
+      return new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js";
+        script.onload = () => window.faceapi ? resolve(window.faceapi) : reject(new Error("人脸检测库未能启动"));
+        script.onerror = () => reject(new Error("人脸检测库加载失败"));
+        document.head.appendChild(script);
+      });
+    }
+
+    function processFaceExpression(expressions) {
+      const ranked = Object.entries(expressions)
+        .filter(([name]) => name !== "neutral")
+        .sort((first, second) => second[1] - first[1]);
+      const strongest = ranked[0];
+      if (!strongest || strongest[1] < .78) {
+        expressionCandidate = "";
+        expressionCandidateFrames = 0;
+        neutralFrameCount = (expressions.neutral || 0) >= .65 ? neutralFrameCount + 1 : 0;
+        if (neutralFrameCount >= 2) lastTriggeredExpression = "";
+        setCameraStatus("看见你了，摆一个明显表情试试。", true);
+        return false;
+      }
+
+      neutralFrameCount = 0;
+      const [expression] = strongest;
+      const profile = expressionProfiles[expression];
+      if (!profile) return false;
+
+      if (expression === expressionCandidate) {
+        expressionCandidateFrames += 1;
+      } else {
+        expressionCandidate = expression;
+        expressionCandidateFrames = 1;
+      }
+
+      if (expressionCandidateFrames < 2) {
+        setCameraStatus(`捕捉到${profile.label}，保持一下…`, true);
+        return false;
+      }
+      if (expression === lastTriggeredExpression) {
+        setCameraStatus(`已捕捉到${profile.label}，换个表情再试试。`, true);
+        return false;
+      }
+      if (Date.now() - lastExpressionTriggerAt < 1800) {
+        setCameraStatus("表情识别中…", true);
+        return false;
+      }
+
+      lastTriggeredExpression = expression;
+      lastExpressionTriggerAt = Date.now();
+      showNextNote(profile.styles);
+      setCameraStatus(`识别到${profile.label}，送你一句心意。`, true);
+      return true;
+    }
+
+    async function detectFaces(faceapi) {
+      if (!activeStream) return;
+      try {
+        const faces = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: .5 })).withFaceExpressions();
+        if (faces.length) {
+          if (!hasPhrase) showNextNote();
+          processFaceExpression(faces[0].expressions);
+        } else {
+          expressionCandidate = "";
+          expressionCandidateFrames = 0;
+          neutralFrameCount = 0;
+          lastTriggeredExpression = "";
+          setCameraStatus("镜头已开启，等待一张脸…", true);
+        }
+        window.setTimeout(() => detectFaces(faceapi), 650);
+      } catch {
+        enterManualMode("检测暂不可用，已切换手动模式。");
+      }
+    }
+
+    async function startCamera() {
+      cameraAction.replaceChildren();
+      setCameraStatus("正在请求摄像头权限…");
+      if (!navigator.mediaDevices?.getUserMedia) {
+        enterManualMode("浏览器无法访问摄像头，已切换手动模式。");
+        return;
+      }
+      try {
+        activeStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        video.srcObject = activeStream;
+        await video.play();
+        cameraPlaceholder.hidden = true;
+        setCameraStatus("正在准备本地人脸检测…", true);
+        const faceapi = await loadFaceApi();
+        const modelUrl = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/";
+        await faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl);
+        await faceapi.nets.faceExpressionNet.loadFromUri(modelUrl);
+        setCameraStatus("镜头已开启，等待一张脸…", true);
+        detectFaces(faceapi);
+      } catch (error) {
+        const denied = error.name === "NotAllowedError" || error.name === "PermissionDeniedError";
+        enterManualMode(denied ? "你拒绝了摄像头权限，已切换手动模式。" : "摄像头或检测库不可用，已切换手动模式。");
+      }
+    }
+
+    document.querySelector("#next-button").addEventListener("click", showNextNote);
+    startCamera();
+  </script>
+</body>
+</html>

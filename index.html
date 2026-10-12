@@ -362,6 +362,7 @@
     let neutralFrameCount = 0;
     let lastTriggeredExpression = "";
     let lastExpressionTriggerAt = 0;
+    let detectorOptions;
 
     document.querySelector("#collection-count").textContent = `FROM YOUR LETTERS / ${loveNotes.length} NOTES`;
 
@@ -595,7 +596,7 @@
     async function detectFaces(faceapi) {
       if (!activeStream) return;
       try {
-        const faces = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: .5 })).withFaceExpressions();
+        const faces = await faceapi.detectAllFaces(video, detectorOptions).withFaceExpressions();
         if (faces.length) {
           if (!hasPhrase) showNextNote();
           processFaceExpression(faces[0].expressions);
@@ -606,7 +607,7 @@
           lastTriggeredExpression = "";
           setCameraStatus("镜头已开启，等待一张脸…", true);
         }
-        window.setTimeout(() => detectFaces(faceapi), 650);
+        window.setTimeout(() => detectFaces(faceapi), 350);
       } catch {
         enterManualMode("检测暂不可用，已切换手动模式。");
       }
@@ -620,15 +621,18 @@
         return;
       }
       try {
-        activeStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        activeStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 24, max: 30 } }, audio: false });
         video.srcObject = activeStream;
         await video.play();
         cameraPlaceholder.hidden = true;
         setCameraStatus("正在准备本地人脸检测…", true);
         const faceapi = await loadFaceApi();
         const modelUrl = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/";
-        await faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl);
-        await faceapi.nets.faceExpressionNet.loadFromUri(modelUrl);
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl),
+          faceapi.nets.faceExpressionNet.loadFromUri(modelUrl)
+        ]);
+        detectorOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: .5 });
         setCameraStatus("镜头已开启，等待一张脸…", true);
         detectFaces(faceapi);
       } catch (error) {
